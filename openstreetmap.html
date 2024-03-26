@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap met Leaflet</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #mapid { height: 400px; }
+        .eiffel-img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+        .distance-info { text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="mapid"></div>
+
+<div class="distance-info">Afstand tot de Eiffeltoren: <span id="distance"></span></div>
+<div class="score-info">Score: <span id="score"></span></div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+    var map = L.map('mapid').setView([0, 0], 2); // Hele wereld, zoomniveau 2
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    var monuments = [
+        { name: "Eiffeltoren", coordinates: [48.8588377, 2.294486], image: "https://prachtigparijs.nl/images/eiffeltorenparijs_citytripparijs.jpeg" },
+        { name: "Statue of Liberty", coordinates: [40.689247, -74.044502], image: "https://upload.wikimedia.org/wikipedia/commons/d/dd/Lady_Liberty_under_a_blue_sky_%28cropped%29.jpg" },
+        { name: "Great Wall of China", coordinates: [40.4319, 116.5704], image: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/The_Great_Wall_of_China_at_Jinshanling-edit.jpg/220px-The_Great_Wall_of_China_at_Jinshanling-edit.jpg" },
+        { name: "Taj Mahal", coordinates: [27.1751, 78.0421], image: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/220px-Taj_Mahal_%28Edited%29.jpeg" },
+        { name: "Colosseum", coordinates: [41.8902, 12.4922], image: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/1200px-Colosseo_2020.jpg" },
+        { name: "Machu Picchu", coordinates: [-13.1631, -72.5450], image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Machu_Picchu%2C_Peru.jpg/1200px-Machu_Picchu%2C_Peru.jpg" }
+    ];
+
+    var eiffelTowerLatLng = L.latLng(48.8588377, 2.294486);
+
+    map.on('click', function(e) {
+        var clickedLatLng = e.latlng;
+        var distance = eiffelTowerLatLng.distanceTo(clickedLatLng) / 1000; // Afstand in kilometers
+        var score;
+
+        if (distance <= 3) {
+            score = 10;
+        } else if (distance > 3 && distance <= 5) {
+            score = 8;
+        } else if (distance > 5 && distance <= 10) {
+            score = 6;
+        } else if (distance > 10 && distance <= 20) {
+            score = 4;
+        } else {
+            score = 0;
+        }
+
+        document.getElementById('distance').innerText = distance.toFixed(2) + " km";
+        document.getElementById('score').innerText = score + " op 10";
+    });
+</script>
+<img class="eiffel-img" src="https://prachtigparijs.nl/images/eiffeltorenparijs_citytripparijs.jpeg"alt="Eiffeltoren"><div class="distance-info">Afstand tot de Eiffeltoren: <span id="distance"></span></div>
+
+</body>
+</html>
