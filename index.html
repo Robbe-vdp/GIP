@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenStreetMap met Leaflet</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #mapid { height: 400px; }
+        .eiffel-img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+        .distance-info { text-align: center; }
+        
+        #foto {
+            max-width: 100%;
+            max-height: 300px;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<div id="mapid"></div>
+
+<div class="distance-info">Afstand van monument: <span id="distance"></span></div>
+<div class="score-info">Score: <span id="score"></span></div>
+<img src="" id="foto"/>
+<button id="nextButton">Volgende</button>
+<div id="endScreen" style="display: none;">
+    <h2>Eindscore</h2>
+    <p id="finalScore"></p>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+    var map = L.map('mapid').setView([0, 0], 2); // Whole world, zoom level 2
+    var monuments = [];
+    var selectedMonument;
+    var marker;
+    var polyline;
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    function displayRandomMonument() {
+        if (monuments.length === 0) {
+            // All monuments have been used, show end screen
+            document.getElementById('endScreen').style.display = 'block';
+            // Calculate final score
+            var finalScore = calculateFinalScore();
+            document.getElementById('finalScore').innerText = `Je eindscore is ${finalScore} uit 10`;
+            return;
+        }
+
+        // Select a random monument from the remaining list
+        var randomIndex = Math.floor(Math.random() * monuments.length);
+        selectedMonument = monuments[randomIndex];
+        // Remove the selected monument from the list to prevent reuse
+        monuments.splice(randomIndex, 1);
+        // Display the photo of the selected monument
+        document.getElementById('foto').src = selectedMonument.afbeelding;
+        // Reset distance and score
+        document.getElementById('distance').innerText = '';
+        document.getElementById('score').innerText = '';
+
+        // Remove previous polyline if exists
+        if (polyline) {
+            map.removeLayer(polyline);
+        }
+
+        // Remove previous marker if exists
+        if (marker) {
+            map.removeLayer(marker);
+        }
+    }
+
+    function calculateFinalScore() {
+        // Calculate final score based on the number of monuments used
+        var usedMonuments = monuments.length;
+        var totalMonuments = usedMonuments + 1; // Add 1 for the current monument
+        var finalScore = (totalMonuments - usedMonuments) * 10 / totalMonuments;
+        return finalScore.toFixed(2);
+    }
+
+    axios.get('http://localhost:8808/api/monuments')
+        .then(function (response) {
+            monuments = response.data;
+            // Display the first random monument when the page loads
+            displayRandomMonument();
+        })
+        .catch(function (error) {
+            console.error('Error fetching monument data:', error);
+        });
+
+    map.on('click', function(e) {
+        var clickedLatLng = e.latlng;
+        if (selectedMonument) {
+            var monumentLatLng = L.latLng(selectedMonument.breedtegraad, selectedMonument.lengtegraad);
+            var distance = monumentLatLng.distanceTo(clickedLatLng) / 1000; // Distance in kilometers
+            var score;
+
+            if (distance <= 3) {
+                score = 10;
+            } else if (distance > 3 && distance <= 5) {
+                score = 8;
+            } else if (distance > 5 && distance <= 10) {
+                score = 6;
+            } else if (distance > 10 && distance <= 20) {
+                score = 4;
+            } else {
+                score = 0;
+            }
+
+            // Display distance and score for the selected monument
+            document.getElementById('distance').innerText = `Afstand tot ${selectedMonument.name}: ${distance.toFixed(2)} km`;
+            document.getElementById('score').innerText = `Score: ${score} uit 10`;
+
+            // Remove previous marker if exists
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            // Create a marker for the monument
+            marker = L.marker(monumentLatLng).addTo(map);
+
+            // Draw polyline between clicked point and monument
+            polyline = L.polyline([clickedLatLng, monumentLatLng], {color: 'red'}).addTo(map);
+        }
+    });
+
+    document.getElementById('nextButton').addEventListener('click', function() {
+        displayRandomMonument();
+    });
+</script>
+
+</body>
+</html>
