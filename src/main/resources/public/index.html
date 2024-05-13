@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>GeoGuesser Robbe van der Poort</title>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+	<style>
+		#mapid {
+			height: 400px;
+			width: 600px;
+		}
+
+		.eiffel-img {
+			max-width: 100%;
+			height: auto;
+			display: block;
+			margin: 0 auto;
+		}
+
+		.distance-info {
+			text-align: center;
+		}
+
+		#foto {
+			text-decoration-thickness: 100%;
+			max-height: 300px;
+			display: block;
+			margin: 0 auto;
+		}
+
+		.container {
+			display: flex;
+			/* Use flexbox layout */
+		}
+
+		.box {
+			width: 50%;
+			/* Each box takes up 50% of the container's width */
+			padding: 20px;
+			box-sizing: border-box;
+			/* Include padding in the width */
+			border: 1px solid #ccc;
+			/* Just for visualization */
+
+		}
+	</style>
+</head>
+
+<body>
+
+	<div class="container">
+		<div id="mapid"></div>
+
+		<div>
+			<div class="distance-info">Afstand van monument: <span id="distance"></span></div>
+			<div class="score-info">Score: <span id="score"></span></div>
+			<img src="" id="foto" />
+			<button id="nextButton">Volgende</button>
+		</div>
+	</div>
+	<div id="endScreen" style="display: none;">
+		<h2>Eindscore</h2>
+		<p id="finalScore"></p>
+		<p id="statistieken"></p>
+	</div>
+
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+	<script>
+		var map = L.map('mapid').setView([0, 0], 2); // Whole world, zoom level 2
+		var monuments = [];
+		var selectedMonument;
+		var marker;
+		var polyline;
+		var totalScore = 0; // Variable to store the total score
+
+		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+		}).addTo(map);
+
+		function displayNextMonument() {
+			if (monuments.length == 0) {
+				// All monuments have been used, show end screen
+				document.getElementById('endScreen').style.display = 'block';
+				// Display the total score
+
+				// bereken de statistieken
+				axios.get('http://localhost:8808/api/getAllScores')
+					.then(function (response) {
+						aantallagerescores = response.data.filter(item => item.score < totalScore).length;
+						aantalhogerescores = response.data.filter(item => item.score > totalScore).length;
+						aantalgelijkescores = response.data.filter(item => item.score == totalScore).length;
+
+						document.getElementById('statistieken').innerText = `Er waren ${aantallagerescores} personen met een lagere score, ${aantalhogerescores} personen met een hogere score, en ${aantalgelijkescores} met een gelijke score.`;
+					});
+
+				// verstuur de behaalde score naar de database
+				axios.post('http://localhost:8808/api/postScore?number=' + totalScore)
+					.then(function (response) {
+						// het versturen van de score is gelukt
+					})
+					.catch(function (error) {
+						// er is een fout opgetreden, toon de foutboodschap
+						alert('Er is een onverwachte fout opgetreden: ' + error);
+					});
+
+				return;
+			}
+
+			// neem het eerste monument uit de array van overgebleven willekeurige monumenten
+			selectedMonument = monuments[0];
+			// verwijder het eerste monument uit de array van overgebleven willekeurige monumenten
+			monuments.splice(0, 1);
+
+			// Display the photo of the selected monument
+			document.getElementById('foto').src = selectedMonument.afbeelding;
+			// Reset distance and score
+			document.getElementById('distance').innerText = '';
+			document.getElementById('score').innerText = '';
+
+			// Remove previous polyline if exists
+			if (polyline) {
+				map.removeLayer(polyline);
+			}
+
+			// Remove previous marker if exists
+			if (marker) {
+				map.removeLayer(marker);
+			}
+		}
+
+		// Lees alle monumenten uit de database
+		axios.get('http://localhost:8808/api/monuments')
+			.then(function (response) {
+				// kies 5 willekeurige monumenten uit de ontvangen data
+				for (i = 0; i < 5; i++) {
+					// kies willekeurig getal, max = aantal resterende opgehaalde monumenten
+					var randomIndex = Math.floor(Math.random() * response.data.length);
+					// voeg het willekeurige monument toe aan de lokale array van monumenten
+					monuments.push(response.data[randomIndex])
+					// verwijder gekozen monument uit opgehaalde monumenten
+					// anders zou het kunnen dat we 2 keer hetzelfde monument vragen
+					response.data.splice(randomIndex, 1);
+				}
+				// Display the first random monument when the page loads
+				displayNextMonument();
+			})
+			.catch(function (error) {
+				console.error('Error fetching monument data:', error);
+			});
+
+		map.on('click', function (e) {
+			var clickedLatLng = e.latlng;
+			if (selectedMonument) {
+				var monumentLatLng = L.latLng(selectedMonument.breedtegraad, selectedMonument.lengtegraad);
+				var distance = monumentLatLng.distanceTo(clickedLatLng) / 1000; // Distance in kilometers
+				var score;
+
+				if (distance <= 3) {
+					score = 10;
+				} else if (distance > 3 && distance <= 50) {
+					score = 8;
+				} else if (distance > 50 && distance <= 200) {
+					score = 6;
+				} else if (distance > 200 && distance <= 500) {
+					score = 4;
+				} else {
+					score = 0;
+				}
+
+				// Add the score to the total score
+				totalScore += score;
+
+				// Display distance and score for the selected monument
+				document.getElementById('distance').innerText = `${selectedMonument.naam} is ${distance.toFixed(2)} km`;
+				document.getElementById('score').innerText = `Score: ${score} uit 10`;
+
+				// Remove previous marker if exists
+				if (marker) {
+					map.removeLayer(marker);
+				}
+
+				// Create a marker for the monument
+				marker = L.marker(monumentLatLng).addTo(map);
+
+				// verwijder vorige polyline
+				if (polyline) {
+					map.removeLayer(polyline);
+				}
+				// Draw polyline between clicked point and monument
+				polyline = L.polyline([clickedLatLng, monumentLatLng], {color: 'red'}).addTo(map);
+			}
+		});
+
+		document.getElementById('nextButton').addEventListener('click', function () {
+			displayNextMonument();
+		});
+	</script>
+
+</body>
+
+</html>
