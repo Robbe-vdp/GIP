@@ -1,0 +1,25 @@
+-- Maak de tabel monumenten aan
+CREATE TABLE monumenten (
+    id SERIAL PRIMARY KEY,
+    naam VARCHAR(100) NOT NULL,
+    breedtegraad DECIMAL(9,6) NOT NULL,
+    lengtegraad DECIMAL(9,6) NOT NULL,
+    afbeelding VARCHAR(255) NOT NULL
+);
+
+-- Voeg de monumenten toe
+
+INSERT INTO gip.monumenten (naam,breedtegraad,lengtegraad,afbeelding) VALUES
+	 ('Eiffeltoren',48.858838,2.294486,'https://prachtigparijs.nl/images/eiffeltorenparijs_citytripparijs.jpeg'),
+	 ('Statue of Liberty',40.689247,-74.044502,'https://upload.wikimedia.org/wikipedia/commons/d/dd/Lady_Liberty_under_a_blue_sky_%28cropped%29.jpg'),
+	 ('Great Wall of China',40.431900,116.570400,'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/The_Great_Wall_of_China_at_Jinshanling-edit.jpg/220px-The_Great_Wall_of_China_at_Jinshanling-edit.jpg'),
+	 ('Taj Mahal',27.175100,78.042100,'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Taj_Mahal_%28Edited%29.jpeg/220px-Taj_Mahal_%28Edited%29.jpeg'),
+	 ('Colosseum',41.890200,12.492200,'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Colosseo_2020.jpg/1200px-Colosseo_2020.jpg'),
+	 ('Machu Picchu',-13.163100,-72.545000,'https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Machu_Picchu%2C_Peru.jpg/1200px-Machu_Picchu%2C_Peru.jpg'),
+	 ('Petra ',30.328500,35.441900,'https://www.hunebednieuwscafe.nl/wp-content/uploads/2018/05/20180416-JFO_2470.jpg'),
+	 ('Grote Piramide van Gizeh',29.979200,31.134200,'https://www.marsaalamtours.com/nl/images/Egypt_attraction_guide/attraction/Piramides-van-Gizeh.jpg'),
+	 ('Sagrada Família',41.404000,2.174400,'https://www.reisroutes.be/userfiles/fotos/sagrada-familia_1788_xl.jpg'),
+	 ('Parthenon',37.971500,23.726300,'https://www.worldatlas.com/r/w1200/upload/60/33/74/parthenon-athens.jpg');
+INSERT INTO gip.monumenten (naam,breedtegraad,lengtegraad,afbeelding) VALUES
+	 ('Kremlin',55.751200,37.618400,'https://cdn.britannica.com/26/116526-050-76C37BBC/Cathedral-of-St-Basil-the-Blessed-Moscow.jpg'),
+	 ('Hagia Sophia',41.008600,28.980200,'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Hagia_Sophia_Mars_2013.jpg/800px-Hagia_Sophia_Mars_2013.jpg');
